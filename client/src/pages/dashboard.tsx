@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/button";
 import PollForm from "@/components/poll-form";
 import ActivePolls from "@/components/active-polls";
 import SecurityStatus from "@/components/security-status";
+import AuditLog from "@/components/audit-log";
+import RealTimeMonitoring from "@/components/real-time-monitoring";
+import BackupRecovery from "@/components/backup-recovery";
 import Layout from "@/components/layout";
 
 export default function Dashboard() {
@@ -90,7 +93,14 @@ export default function Dashboard() {
             <div className="space-y-6">
               <ActivePolls />
               <SecurityStatus />
+              <RealTimeMonitoring />
             </div>
+          </div>
+
+          {/* Additional Management Tools */}
+          <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <AuditLog />
+            <BackupRecovery />
           </div>
         </div>
       </div>
