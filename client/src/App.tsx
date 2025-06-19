@@ -15,8 +15,10 @@ function Router() {
       <Route path="/" component={Dashboard} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/vote/:token" component={Vote} />
+      <Route path="/vote" component={Vote} />
       <Route path="/verify" component={Verify} />
       <Route path="/results/:id" component={Results} />
+      <Route path="/results" component={Results} />
       <Route component={NotFound} />
     </Switch>
   );

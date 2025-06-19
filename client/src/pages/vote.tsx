@@ -4,17 +4,51 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { CheckCircle, Clock, Info } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import Layout from "@/components/layout";
 
 export default function Vote() {
   const [, params] = useRoute("/vote/:token");
   const [selectedChoices, setSelectedChoices] = useState<string[]>([]);
   const { toast } = useToast();
+
+  // If no token provided, show token entry interface
+  if (!params?.token) {
+    return (
+      <Layout>
+        <div className="py-8">
+          <div className="max-w-2xl mx-auto px-4">
+            <div className="text-center mb-8">
+              <h1 className="text-2xl font-bold text-gray-900">Enter Voting Token</h1>
+              <p className="mt-2 text-gray-600">Please enter your unique voting token to access your ballot</p>
+            </div>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="token">Voting Token</Label>
+                    <Input
+                      id="token"
+                      type="text"
+                      placeholder="Enter your voting token"
+                      className="mt-2"
+                    />
+                  </div>
+                  <Button className="w-full">Access Ballot</Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   const { data: voteData, isLoading } = useQuery({
     queryKey: [`/api/vote/${params?.token}`],
@@ -46,58 +80,60 @@ export default function Vote() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading voting interface...</p>
+      <Layout>
+        <div className="py-8">
+          <div className="max-w-2xl mx-auto px-4 text-center">
+            <div className="animate-pulse">Loading ballot...</div>
+          </div>
         </div>
-      </div>
+      </Layout>
     );
   }
 
   if (!voteData) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6 text-center">
-            <div className="text-red-500 mb-4">
-              <CheckCircle className="h-12 w-12 mx-auto" />
-            </div>
-            <h1 className="text-xl font-bold text-gray-900 mb-2">Invalid Voting Link</h1>
-            <p className="text-gray-600">
-              This voting link is invalid or has already been used.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <Layout>
+        <div className="py-8">
+          <div className="max-w-2xl mx-auto px-4">
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertDescription>
+                Invalid voting token or ballot not found.
+              </AlertDescription>
+            </Alert>
+          </div>
+        </div>
+      </Layout>
     );
   }
 
-  const { poll, voter } = voteData;
-  
-  const getTimeRemaining = () => {
-    const now = new Date();
-    const endDate = new Date(poll.endDate);
-    const diff = endDate.getTime() - now.getTime();
-    
-    if (diff <= 0) return "Voting has ended";
-    
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    
-    if (days > 0) return `${days} days, ${hours} hours`;
-    if (hours > 0) return `${hours} hours, ${minutes} minutes`;
-    return `${minutes} minutes`;
-  };
+  const poll = (voteData as any)?.poll;
+  const voter = (voteData as any)?.voter;
+
+  if (!poll || !voter) {
+    return (
+      <Layout>
+        <div className="py-8">
+          <div className="max-w-2xl mx-auto px-4">
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertDescription>
+                Unable to load ballot information.
+              </AlertDescription>
+            </Alert>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   const handleChoiceChange = (choice: string, checked: boolean) => {
     if (poll.allowMultiple) {
-      if (checked) {
-        setSelectedChoices([...selectedChoices, choice]);
-      } else {
-        setSelectedChoices(selectedChoices.filter(c => c !== choice));
-      }
+      setSelectedChoices(prev => 
+        checked 
+          ? [...prev, choice]
+          : prev.filter(c => c !== choice)
+      );
     } else {
       setSelectedChoices(checked ? [choice] : []);
     }
@@ -106,115 +142,71 @@ export default function Vote() {
   const handleSubmit = () => {
     if (selectedChoices.length === 0) {
       toast({
-        title: "Error",
-        description: "Please select at least one option",
+        title: "No Selection",
+        description: "Please select at least one option before voting",
         variant: "destructive",
       });
       return;
     }
-
     submitVoteMutation.mutate(selectedChoices);
   };
 
-  if (submitVoteMutation.isSuccess) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6 text-center">
-            <div className="text-green-500 mb-4">
-              <CheckCircle className="h-12 w-12 mx-auto" />
-            </div>
-            <h1 className="text-xl font-bold text-gray-900 mb-2">Vote Submitted</h1>
-            <p className="text-gray-600">
-              Your vote has been recorded and added to the cryptographic log.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-2xl mx-auto px-4">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center mb-4">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <CheckCircle className="w-5 h-5 text-white" />
-            </div>
-            <span className="ml-3 text-xl font-semibold text-gray-900">VoteSecure</span>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">{poll.title}</h1>
-          <p className="mt-2 text-gray-600">{poll.description}</p>
-          <div className="mt-4 flex items-center justify-center space-x-2">
-            <Clock className="w-4 h-4 text-gray-500" />
-            <span className="text-sm text-gray-500">
-              Voting ends in {getTimeRemaining()}
-            </span>
-          </div>
-        </div>
-
-        {/* Voting Form */}
-        <Card>
-          <CardContent className="pt-6">
-            <div className="space-y-4">
-              {poll.allowMultiple ? (
-                // Multiple choice
-                poll.options.map((option: string) => (
-                  <div key={option} className="vote-option">
-                    <div className="flex items-center space-x-3">
-                      <Checkbox
-                        id={option}
-                        checked={selectedChoices.includes(option)}
-                        onCheckedChange={(checked) => handleChoiceChange(option, checked as boolean)}
-                      />
-                      <Label htmlFor={option} className="flex-1 cursor-pointer">
-                        <p className="text-sm font-medium text-gray-900">{option}</p>
-                      </Label>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                // Single choice
-                <RadioGroup 
-                  value={selectedChoices[0] || ""} 
-                  onValueChange={(value) => setSelectedChoices([value])}
-                >
-                  {poll.options.map((option: string) => (
-                    <div key={option} className="vote-option">
-                      <div className="flex items-center space-x-3">
-                        <RadioGroupItem value={option} id={option} />
-                        <Label htmlFor={option} className="flex-1 cursor-pointer">
-                          <p className="text-sm font-medium text-gray-900">{option}</p>
+    <Layout>
+      <div className="py-8">
+        <div className="max-w-2xl mx-auto px-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>{poll.title}</CardTitle>
+              <p className="text-gray-600">{poll.description}</p>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div>
+                  <h3 className="font-medium mb-4">
+                    {poll.allowMultiple ? "Select all that apply:" : "Select one option:"}
+                  </h3>
+                  <div className="space-y-3">
+                    {poll.options.map((option: string, index: number) => (
+                      <div key={index} className="flex items-center space-x-2">
+                        {poll.allowMultiple ? (
+                          <Checkbox
+                            id={`option-${index}`}
+                            checked={selectedChoices.includes(option)}
+                            onCheckedChange={(checked) => handleChoiceChange(option, checked as boolean)}
+                          />
+                        ) : (
+                          <RadioGroup
+                            value={selectedChoices[0] || ""}
+                            onValueChange={(value) => setSelectedChoices([value])}
+                          >
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value={option} id={`option-${index}`} />
+                            </div>
+                          </RadioGroup>
+                        )}
+                        <Label htmlFor={`option-${index}`} className="flex-1">
+                          {option}
                         </Label>
                       </div>
-                    </div>
-                  ))}
-                </RadioGroup>
-              )}
-            </div>
+                    ))}
+                  </div>
+                </div>
 
-            <Alert className="mt-6">
-              <Info className="h-4 w-4" />
-              <AlertDescription>
-                Your vote will be cryptographically secured and added to a tamper-evident log. 
-                After voting closes, you can verify the integrity of all votes using our verification tools.
-              </AlertDescription>
-            </Alert>
-
-            <div className="mt-8 flex justify-center">
-              <Button 
-                size="lg" 
-                onClick={handleSubmit}
-                disabled={submitVoteMutation.isPending || selectedChoices.length === 0}
-              >
-                {submitVoteMutation.isPending ? "Submitting..." : "Submit Vote"}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+                <div className="pt-4 border-t">
+                  <Button 
+                    onClick={handleSubmit}
+                    disabled={submitVoteMutation.isPending}
+                    className="w-full"
+                  >
+                    {submitVoteMutation.isPending ? "Submitting Vote..." : "Submit Vote"}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </div>
+    </Layout>
   );
 }

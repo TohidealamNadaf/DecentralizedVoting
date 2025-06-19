@@ -5,10 +5,29 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import PollResultsList from "@/components/poll-results-list";
+import Layout from "@/components/layout";
 
 export default function Results() {
   const [, params] = useRoute("/results/:id");
   const pollId = params?.id;
+
+  // If no poll ID provided, show poll selection interface
+  if (!pollId) {
+    return (
+      <Layout>
+        <div className="py-8">
+          <div className="max-w-4xl mx-auto px-4">
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold text-gray-900">Poll Results</h1>
+              <p className="mt-2 text-gray-600">View results for completed polls</p>
+            </div>
+            <PollResultsList />
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   const { data: poll } = useQuery({
     queryKey: [`/api/polls/${pollId}`],

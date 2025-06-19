@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import VerificationTools from "@/components/verification-tools";
+import Layout from "@/components/layout";
 
 interface VerificationResult {
   chainIntegrityValid: boolean;
@@ -86,21 +87,16 @@ export default function Verify() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center mb-4">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <CheckCircle className="w-5 h-5 text-white" />
-            </div>
-            <span className="ml-3 text-xl font-semibold text-gray-900">VoteSecure</span>
+    <Layout>
+      <div className="py-8">
+        <div className="max-w-6xl mx-auto px-4">
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900">Verification Interface</h1>
+            <p className="mt-2 text-gray-600">Audit and verify election integrity</p>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Verification Interface</h1>
-          <p className="mt-2 text-gray-600">Audit and verify election integrity</p>
-        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Verification Tools */}
           <div>
             <Card>
@@ -280,7 +276,8 @@ export default function Verify() {
             </Card>
           </div>
         </div>
+        </div>
       </div>
-    </div>
+    </Layout>
   );
 }
